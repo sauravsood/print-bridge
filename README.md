@@ -28,7 +28,9 @@ This stops the address changing after a power cut.
 
 ### 2. Create the Cloudflare Tunnel
 
-1. Go to [one.dash.cloudflare.com](https://one.dash.cloudflare.com) → **Networks → Tunnels → Create a tunnel**.
+1. Go to [one.dash.cloudflare.com](https://one.dash.cloudflare.com) and open **Networks → Connectors → Cloudflare Tunnels → Create a tunnel**.
+   (Or type `tunnel` in the dashboard search, or use **Networking → Tunnels** on dash.cloudflare.com.
+   If it asks you to set up Zero Trust first, pick any team name and the **Free** plan.)
 2. Pick **Cloudflared**, and name it `print-bridge`.
 3. On the "Install connector" screen, copy the long token from any of the commands
    shown (the text after `--token` or `service install`). Don't run their command.
