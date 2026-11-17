@@ -40,12 +40,21 @@ else
 fi
 case "$DEV" in /dev/mmcblk0*) die "Refusing to write to the card the Pi is running from." ;; esac
 name=$(basename "$DEV")
-bytes=$(( $(cat /sys/block/"$name"/size 2>/dev/null || echo 0) * 512 ))
-[ -n "${TARGET_DEV:-}" ] && bytes=$(blockdev --getsize64 "$DEV")
-gb=$(( bytes / 1000000000 ))
+# Size via blockdev/awk: bash arithmetic on old 32-bit systems can overflow above 2 GB.
+bytes=$(blockdev --getsize64 "$DEV" 2>/dev/null || awk '{printf "%.0f", $1*512}' /sys/block/"$name"/size)
+gb=$(awk -v b="$bytes" 'BEGIN{printf "%.1f", b/1e9}')
 model=$(cat /sys/block/"$name"/device/model 2>/dev/null | tr -s ' ' || true)
-[ "$bytes" -ge 3500000000 ] || [ -n "${TARGET_DEV:-}" ] || die "$DEV is only ${gb} GB. Use a card of 8 GB or more."
-[ "$bytes" -le 260000000000 ] || die "$DEV is ${gb} GB, which looks like a hard drive, not a microSD card. Stopping."
+if [ -z "${TARGET_DEV:-}" ] && awk -v b="$bytes" 'BEGIN{exit !(b < 3.5e9)}'; then
+  echo
+  echo "$DEV ($model) reports only ${gb} GB."
+  echo "If your card is bigger than that, the card reader can't read it properly. Cards over 32 GB"
+  echo "(SDXC) don't work in many older readers. Try a different reader, or a card of 8-32 GB."
+  echo "Details for troubleshooting:"
+  lsblk 2>/dev/null || cat /proc/partitions
+  dmesg 2>/dev/null | grep -iE 'sd[a-z]|usb-storage' | tail -8
+  die "Card size check failed."
+fi
+awk -v b="$bytes" 'BEGIN{exit !(b > 2.6e11)}' && die "$DEV is ${gb} GB, which looks like a hard drive, not a microSD card. Stopping."
 
 say "New card found: $DEV  (${gb} GB ${model})"
 echo "EVERYTHING on $DEV will be erased. The Pi's own card is not touched."
