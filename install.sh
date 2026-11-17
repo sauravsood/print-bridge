@@ -13,9 +13,13 @@ TOKEN="${1:-}"
 
 [ "$(id -u)" -eq 0 ] || { echo "Please run with sudo."; exit 1; }
 
-echo "==> Installing packages"
-apt-get update -qq
-apt-get install -y -qq python3 poppler-utils git ca-certificates curl >/dev/null
+# A fresh Pi runs automatic updates in the background after first boot; wait for
+# them (up to 15 min) instead of failing on the dpkg lock.
+APT="apt-get -o DPkg::Lock::Timeout=900"
+
+echo "==> Installing packages (waits if the Pi is busy with automatic updates)"
+$APT update -qq
+$APT install -y -qq python3 poppler-utils git ca-certificates curl >/dev/null
 
 echo "==> Fetching code"
 if [ -d /opt/print-bridge/.git ]; then
@@ -40,8 +44,8 @@ if [ -n "$TOKEN" ]; then
     curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg -o /usr/share/keyrings/cloudflare-main.gpg
     echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' \
       > /etc/apt/sources.list.d/cloudflared.list
-    apt-get update -qq
-    apt-get install -y -qq cloudflared >/dev/null
+    $APT update -qq
+    $APT install -y -qq cloudflared >/dev/null
   fi
   if systemctl list-unit-files cloudflared.service >/dev/null 2>&1 && systemctl is-enabled -q cloudflared 2>/dev/null; then
     cloudflared service uninstall >/dev/null 2>&1 || true
