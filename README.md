@@ -65,8 +65,15 @@ You need a terminal on the Pi, using the username and password chosen when it wa
   (or `raspberrypi.local`), the username and the password.
 - **Keyboard and monitor:** plug them into the Pi and log in directly.
 
-**Finding the Pi's IP:** open your router's admin page (usually `192.168.1.1` or `192.168.0.1`)
-and look in the connected or DHCP clients list for `raspberrypi`.
+**Finding the Pi's IP** (needed if `raspberrypi.local` says "Could not resolve hostname"):
+
+- **Router:** open the admin page (usually `https://192.168.1.1` or `192.168.0.1`) and find the
+  connected-devices / DHCP clients table. On Airtel fibre routers it's **Device Information → LAN Status**
+  (or **Home Networking**). Look for `raspberrypi`.
+- **No name shown?** Look for a MAC address starting with a Raspberry Pi prefix:
+  `B8:27:EB`, `DC:A6:32`, `E4:5F:01`, `D8:3A:DD`, `2C:CF:67`, `28:CD:C1`.
+- **From a Windows laptop:** run `arp -a` in PowerShell and look for those prefixes written with
+  dashes (e.g. `dc-a6-32-…`). The IP on that line is the Pi.
 
 **"Connection refused"** means SSH is switched off. Log in once with a keyboard and monitor, run
 `sudo raspi-config`, go to **Interface Options → SSH → Enable**, and then SSH will work.
