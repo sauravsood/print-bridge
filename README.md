@@ -32,6 +32,28 @@ Setup moves between the Cloudflare dashboard and the Pi. Follow the parts in ord
 Optional but recommended first: in your **router's** admin page, reserve a fixed IP for the
 TSC printer (called "DHCP reservation" or "static lease") so it never changes after a power cut.
 
+### Before you start: a working Pi
+
+Skip this if your Pi already boots to a login prompt and you can log in.
+
+If the Pi is new, or it stops at boot with **"Kernel panic … Unable to mount root fs"** (a corrupt
+microSD card), put a fresh system on its microSD card:
+
+1. On any computer that allows installs and has a card reader, install
+   [Raspberry Pi Imager](https://www.raspberrypi.com/software/). (On a Pi 4 or newer you can skip
+   the other computer: hold **Shift** while powering on to reinstall over the internet, with a
+   keyboard, monitor and Ethernet attached.)
+2. Choose your Pi model, then **Raspberry Pi OS Lite (64-bit)** (or 32-bit on a Pi 2), then the microSD card.
+3. When asked to apply OS customisation, choose **Edit settings**:
+   - Hostname: `printbridge`
+   - Username and password: pick your own and note them down
+   - **Services tab:** tick **Enable SSH** (password authentication)
+4. Write the card, put it in the Pi, connect Ethernet to the **same router as the printer**, and power on.
+   After a minute or two it's reachable as `ssh <username>@printbridge.local` (or by IP, see below).
+
+You can also buy a microSD card with Raspberry Pi OS preinstalled. You'll then need a keyboard
+and monitor once to set a password and turn on SSH (`sudo raspi-config` → Interface Options → SSH).
+
 ### Part A: Cloudflare, create the tunnel
 
 1. On [dash.cloudflare.com](https://dash.cloudflare.com), open **Networking → Tunnels** in the left
@@ -59,7 +81,8 @@ TSC printer (called "DHCP reservation" or "static lease") so it never changes af
 You need a terminal on the Pi, using the username and password chosen when it was first set up
 (often `pi`; very old images used password `raspberry`). Pick whichever route works:
 
-- **Laptop:** open PowerShell (Windows) or Terminal (Mac) and run `ssh pi@raspberrypi.local`.
+- **Laptop:** open PowerShell (Windows) or Terminal (Mac) and run `ssh <username>@printbridge.local`
+  (or `ssh pi@raspberrypi.local` on an older setup).
   If the host isn't found, use the Pi's IP: `ssh pi@192.168.x.x`.
 - **iPhone:** install a free SSH app such as **Termius**, then add a host with the Pi's IP
   (or `raspberrypi.local`), the username and the password.
