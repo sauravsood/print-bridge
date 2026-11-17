@@ -20,48 +20,78 @@ It needs only `python3` and `poppler-utils`. There's nothing to `pip install`.
 
 ## Setup (about 20 minutes, once)
 
-### 1. Give the printer a fixed IP
+There are three parts, and each one happens in a different place:
 
-In your router's admin page, find the TSC printer in the connected devices list and
-reserve its IP address (it's often called "DHCP reservation" or "static lease").
-This stops the address changing after a power cut.
+| Part | Where | What |
+| --- | --- | --- |
+| **A** | Cloudflare dashboard, in a browser | Create the tunnel, point `print.sauravsood.com` at it, add an email login |
+| **B** | On the Raspberry Pi (terminal) | Run one install command |
+| **C** | On your phone or laptop (browser) | Find the printer and do a test print |
 
-### 2. Create the Cloudflare Tunnel
+Optional but recommended first: in your **router's** admin page, reserve a fixed IP for the
+TSC printer (called "DHCP reservation" or "static lease") so it never changes after a power cut.
 
-1. Go to [one.dash.cloudflare.com](https://one.dash.cloudflare.com) and open **Networks → Connectors → Cloudflare Tunnels → Create a tunnel**.
-   (Or type `tunnel` in the dashboard search, or use **Networking → Tunnels** on dash.cloudflare.com.
-   If it asks you to set up Zero Trust first, pick any team name and the **Free** plan.)
-2. Pick **Cloudflared**, and name it `print-bridge`.
-3. Under **Operating System**, pick **Debian** (Raspberry Pi OS is Debian) and leave 64-bit.
-   In **Install and Run**, find the command ending in `service install eyJ...` and copy just
-   that long `eyJ...` string. That's your tunnel token. Keep it private, and don't run their commands.
-4. Click Next. On the routing screen (**Route traffic** / **Public hostname**), set subdomain `print`, domain
-   `sauravsood.com`, service type **HTTP**, URL `localhost:8080`. Then save.
+### Part A: Cloudflare (browser)
 
-### 3. Put a login in front of it (do this before using it)
+**A1. Create the tunnel**
 
-1. In the same dashboard: **Access → Applications → Add an application → Self-hosted**.
-2. Name it `Print`, set the domain to `print.sauravsood.com`.
-3. Add a policy: Action **Allow**, Include **Emails**, then add your email
-   (and anyone else who prints labels).
+1. Go to [one.dash.cloudflare.com](https://one.dash.cloudflare.com). If it asks you to set up
+   Zero Trust first, pick any team name and the **Free** plan.
+2. Open **Networks → Connectors → Cloudflare Tunnels → Create a tunnel**. (If you can't find it,
+   type `tunnel` in the dashboard search, or use **Networking → Tunnels** on dash.cloudflare.com.)
+3. Choose **Cloudflared**, name it `print-bridge`, and save.
+
+**A2. Copy the token**
+
+1. Under **Operating System**, click **Debian** (Raspberry Pi OS is Debian). Leave 64-bit.
+2. Scroll to **Install and Run**. The last command looks like
+   `sudo cloudflared service install eyJhIjoi...` (very long).
+3. Copy **only the part starting with `eyJ`** into a note. That's your tunnel token, which
+   you'll need in Part B. Keep it private, and **don't run Cloudflare's commands** anywhere.
+4. Scroll to the bottom and click **Next**.
+
+**A3. Point print.sauravsood.com at the tunnel**
+
+The next screen may be called *Route tunnel*, *Published application routes* or *Public hostname*. Fill in:
+
+| Field | Value |
+| --- | --- |
+| Subdomain | `print` |
+| Domain | `sauravsood.com` |
+| Path | *(leave empty)* |
+| Service type | `HTTP` |
+| URL | `localhost:8080` |
+
+Then click **Save** or **Complete setup**.
+
+**A4. Add the email login**
+
+1. In the left menu: **Access** (or **Access controls**) → **Applications** → **Add an application** → **Self-hosted**.
+2. Name it `Print`. Set Subdomain `print` and Domain `sauravsood.com`.
+3. Add a policy named `Me`: Action **Allow**, Include **Emails**, then your email address
+   (add anyone else who prints labels).
 4. Save. Visitors now get a one-time code by email before they see the page.
-   It works in any browser, with nothing to install.
 
-### 4. Install on the Pi
+### Part B: Raspberry Pi (terminal)
 
-Log in to the Pi (SSH, or a keyboard and monitor) and run this, pasting your token at the end:
+**B1. Open a terminal on the Pi.** Either plug in a keyboard and monitor, or from another
+computer on the same network run `ssh pi@<Pi's IP address>`. Windows has `ssh` built into PowerShell.
+
+**B2. Run the installer.** Paste this one line, replacing `eyJ...` with your token from A2:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/sauravsood/print-bridge/main/install.sh | sudo bash -s -- PASTE_TOKEN_HERE
+curl -fsSL https://raw.githubusercontent.com/sauravsood/print-bridge/main/install.sh | sudo bash -s -- eyJ...
 ```
 
-### 5. First print
+**B3.** Wait until it prints **Done. The print bridge is running.** In the Cloudflare
+dashboard, the tunnel should now show **Healthy**.
 
-1. Open **https://print.sauravsood.com** and log in.
-2. Under **Printer settings**, tap **Find** (or type the printer's IP), check the
-   label size, then tap **Save**.
-3. Tap **Calibrate** once so the printer learns the label gap, then **Test print**.
-4. On iPhone, tap Share → **Add to Home Screen** for a one-tap app icon.
+### Part C: first print (phone or laptop browser)
+
+1. Open **https://print.sauravsood.com**, enter your email, then enter the code Cloudflare emails you.
+2. Open **Printer settings**. Tap **Find** (or type the printer's IP), check the label size, and tap **Save**.
+3. Tap **Calibrate** once so the printer learns the label gap, then tap **Test print**.
+4. On iPhone, tap Share → **Add to Home Screen** for a one-tap icon.
 
 ## Everyday use
 
