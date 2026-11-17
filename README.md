@@ -51,6 +51,17 @@ microSD card), put a fresh system on its microSD card:
 4. Write the card, put it in the Pi, connect Ethernet to the **same router as the printer**, and power on.
    After a minute or two it's reachable as `ssh <username>@printbridge.local` (or by IP, see below).
 
+**No other computer?** If the old Pi still boots (even on a very old system), it can write the new card
+itself. Put a new microSD (8 GB or more) in a USB card reader, plug it into the Pi, log in, and run:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sauravsood/print-bridge/main/tools/flash-new-card.sh | sudo bash
+```
+
+(If curl complains about a certificate, run it again with `-fsSLk` in place of `-fsSL`. The image itself
+is still checked against its SHA-256.) It asks you to confirm the card, sets your username, password and SSH,
+and never touches the card the Pi is running from. Then swap cards and power on.
+
 You can also buy a microSD card with Raspberry Pi OS preinstalled. You'll then need a keyboard
 and monitor once to set a password and turn on SSH (`sudo raspi-config` → Interface Options → SSH).
 
