@@ -9,7 +9,17 @@ set -euo pipefail
 
 REPO="${PRINT_BRIDGE_REPO:-https://github.com/sauravsood/print-bridge.git}"
 BRANCH="${PRINT_BRIDGE_BRANCH:-main}"
-TOKEN="${1:-}"
+# The token is the argument starting with "eyJ"; this also tolerates people pasting
+# Cloudflare's whole "cloudflared service install <token>" after the "--".
+TOKEN=""
+for arg in "$@"; do
+  case "$arg" in eyJ*) TOKEN="$arg" ;; esac
+done
+if [ -z "$TOKEN" ] && [ $# -gt 0 ]; then
+  echo "Couldn't find the tunnel token in what you passed (it starts with 'eyJ')."
+  echo "Usage: curl -fsSL .../install.sh | sudo bash -s -- eyJ...your-token..."
+  exit 1
+fi
 
 [ "$(id -u)" -eq 0 ] || { echo "Please run with sudo."; exit 1; }
 
