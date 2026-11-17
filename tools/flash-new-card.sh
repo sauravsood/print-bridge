@@ -94,16 +94,47 @@ echo "$want" | grep -Eq '^[0-9a-f]{64}$' || die "Couldn't fetch the image checks
 say "Unmounting $DEV"
 for p in $(awk -v d="$DEV" 'index($1,d)==1{print $1}' /proc/mounts); do umount "$p"; done
 
+# The connection can drop on a long download, so fetch it in 8 MB pieces: each piece is
+# saved to a small temp file, retried until complete, then fed to xz | dd in order.
+total=$($CURL -s -r 0-0 -D - -o /dev/null "$url" | tr -d '\r' \
+        | awk 'tolower($1)=="content-range:"{n=split($NF,a,"/"); print a[n]}' | tail -1)
+echo "$total" | grep -Eq '^[0-9]+$' || die "Couldn't get the image size from the server."
+
+fetch_pieces() {
+  local off=0 piece=8388608 end want_len got_len tries tmp
+  tmp=$(mktemp)
+  while [ "$off" -lt "$total" ]; do
+    end=$(( off + piece - 1 )); [ "$end" -lt "$total" ] || end=$(( total - 1 ))
+    want_len=$(( end - off + 1 ))
+    tries=0
+    while :; do
+      if $CURL -s --connect-timeout 20 --speed-time 60 --speed-limit 1000 -r "$off-$end" -o "$tmp" "$url"; then
+        got_len=$(stat -c %s "$tmp" 2>/dev/null || echo 0)
+        [ "$got_len" -eq "$want_len" ] && break
+      fi
+      tries=$(( tries + 1 ))
+      [ "$tries" -lt 20 ] || { echo "Download kept failing at $(( off / 1048576 )) MB." >&2; rm -f "$tmp"; return 1; }
+      printf '\n  (connection dropped, retrying piece in 5s, attempt %d)\n' "$tries" >&2
+      sleep 5
+    done
+    cat "$tmp"
+    off=$(( end + 1 ))
+    printf '\r  %d / %d MB' $(( off / 1048576 )) $(( total / 1048576 )) >&2
+  done
+  rm -f "$tmp"
+  printf '\n' >&2
+}
+
 say "Downloading and writing $(basename "$url")"
-echo "About 500 MB. On a Pi 2 this takes 15-30 minutes; the bar shows the download."
+echo "About $(( total / 1048576 )) MB. On a Pi 2 this takes 20-40 minutes. Dropped connections are retried automatically."
 fifo=$(mktemp -u); mkfifo "$fifo"
 sha256sum < "$fifo" | awk '{print $1}' > "$fifo.sum" &
 sumpid=$!
-$CURL -# "$url" | tee "$fifo" | xz -dc | dd of="$DEV" bs=4M 2>/dev/null
-wait "$sumpid"
-got=$(cat "$fifo.sum"); rm -f "$fifo" "$fifo.sum"
+fetch_pieces | tee "$fifo" | xz -dc | dd of="$DEV" bs=4M 2>/dev/null || true
+wait "$sumpid" || true
+got=$(cat "$fifo.sum" 2>/dev/null); rm -f "$fifo" "$fifo.sum"
 sync
-[ "$got" = "$want" ] || die "Checksum mismatch: the download was corrupted. Run the command again."
+[ "$got" = "$want" ] || die "The download didn't complete correctly. Check the Ethernet cable and run the same command again."
 echo "Checksum OK."
 
 # ---- pre-configure login + SSH ----------------------------------------------------
