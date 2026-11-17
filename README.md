@@ -71,7 +71,7 @@ and monitor once to set a password and turn on SSH (`sudo raspi-config` → Inte
    menu, then **Create a tunnel**. (If it asks you to set up Zero Trust first, pick any team name and the **Free** plan.)
 2. Name it `print-bridge` and continue.
 3. Under **Operating System**, click **Debian** (Raspberry Pi OS is Debian). Leave 64-bit.
-4. Under **Install as service**, click the copy icon. That copies
+4. Under **Install as service**, click the **copy icon**. Don't select the text with the mouse: the screen masks most of the token with `****`, and a masked token won't work. That copies
    `sudo cloudflared service install eyJhIjoi...`. Paste it into a note and keep **only the part
    starting with `eyJ`**. That's your tunnel token. Keep it private, and **don't run Cloudflare's commands**.
 5. **Leave this tab open.** **Continue** stays greyed out until the Pi connects in Part B.

@@ -13,6 +13,19 @@ TOKEN="${1:-}"
 
 [ "$(id -u)" -eq 0 ] || { echo "Please run with sudo."; exit 1; }
 
+if [ -n "$TOKEN" ]; then
+  case "$TOKEN" in
+    *'*'*) echo "That token contains '*' characters: it's the masked text from the screen, not the real token."
+           echo "In Cloudflare, click the COPY ICON next to the install command (don't select the text), then try again."
+           exit 1 ;;
+  esac
+  if [ "${#TOKEN}" -lt 100 ]; then
+    echo "That token is only ${#TOKEN} characters long; real tunnel tokens are several hundred."
+    echo "Copy it again with the copy icon in Cloudflare and try again."
+    exit 1
+  fi
+fi
+
 # A fresh Pi runs automatic updates in the background after first boot; wait for
 # them (up to 15 min) instead of failing on the dpkg lock.
 APT="apt-get -o DPkg::Lock::Timeout=900"
