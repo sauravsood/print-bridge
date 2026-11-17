@@ -119,20 +119,28 @@ You need a terminal on the Pi, using the username and password chosen when it wa
 
 **C1. Point print.sauravsood.com at the tunnel**
 
-1. Back in the tab from Part A, **Connection Status** should now say **Connected**. Click **Continue**.
-   (If you closed the tab, go to **Networking → Tunnels**, click `print-bridge`, and add a
-   public hostname / published application route there.)
-2. Fill in:
+When Part B finishes, the tunnel is connected but has no web address yet. In the tunnel list it
+shows **Healthy** with **No routes**. You add the address here.
+
+1. Go to **Networking → Tunnels** on dash.cloudflare.com. Your `print-bridge` tunnel should show
+   **Healthy** and **No routes**. (If you still have the Part A tab open showing **Connected**,
+   you can click **Continue** there instead and skip to step 4.)
+2. Click the name **print-bridge**. (Or use the **⋯** menu at the end of its row → *Configure* / *Edit*.)
+3. Open the **Routes** tab (sometimes called *Published application routes* or *Public hostnames*)
+   and click **Add route**. If it asks what kind, choose **Published application**.
+4. Fill in:
 
    | Field | Value |
    | --- | --- |
    | Subdomain | `print` |
-   | Domain | `sauravsood.com` |
+   | Domain | `sauravsood.com` (pick it from the list) |
    | Path | *(leave empty)* |
    | Service type | `HTTP` |
    | URL | `localhost:8080` |
 
-3. Save.
+   If the form has a single **Service URL** box instead of type + URL, enter `http://localhost:8080`.
+5. Save. Back in the tunnel list, **Routes** should now show `print.sauravsood.com`.
+6. **Do C2 straight away, before opening the page**, so nobody else can reach your printer.
 
 **C2. Add the email login**
 
