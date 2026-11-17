@@ -32,9 +32,10 @@ This stops the address changing after a power cut.
    (Or type `tunnel` in the dashboard search, or use **Networking → Tunnels** on dash.cloudflare.com.
    If it asks you to set up Zero Trust first, pick any team name and the **Free** plan.)
 2. Pick **Cloudflared**, and name it `print-bridge`.
-3. On the "Install connector" screen, copy the long token from any of the commands
-   shown (the text after `--token` or `service install`). Don't run their command.
-4. Click Next. Under **Public hostname**, set subdomain `print`, domain
+3. Under **Operating System**, pick **Debian** (Raspberry Pi OS is Debian) and leave 64-bit.
+   In **Install and Run**, find the command ending in `service install eyJ...` and copy just
+   that long `eyJ...` string. That's your tunnel token. Keep it private, and don't run their commands.
+4. Click Next. On the routing screen (**Route traffic** / **Public hostname**), set subdomain `print`, domain
    `sauravsood.com`, service type **HTTP**, URL `localhost:8080`. Then save.
 
 ### 3. Put a login in front of it (do this before using it)
