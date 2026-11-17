@@ -79,7 +79,10 @@ and monitor once to set a password and turn on SSH (`sudo raspi-config` → Inte
 ### Part B: Raspberry Pi, install
 
 1. Open a terminal on the Pi (see [Getting into the Pi](#getting-into-the-pi) below).
-2. Paste this one line, replacing `eyJ...` with your token from A4:
+2. Paste this one line, replacing `eyJ...` with your token from A4.
+   **Don't type it by hand.** Do this step over SSH so you can paste. On the Pi's own keyboard, run
+   `hostname -I` to see its IP. Then, on a laptop, run `ssh <username>@<that IP>` in PowerShell or
+   Terminal (or use an SSH app like Termius on your phone), and right-click or paste the command there:
 
    ```sh
    curl -fsSL https://raw.githubusercontent.com/sauravsood/print-bridge/main/install.sh | sudo bash -s -- eyJ...
