@@ -1,0 +1,9 @@
+{
+  "name": "Shipping Labels",
+  "short_name": "Labels",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F4EE",
+  "theme_color": "#F8F4EE",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

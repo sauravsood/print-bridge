@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Label Printer</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Labels">
+<meta name="theme-color" content="#F8F4EE">
+<style>
+  :root {
+    --bg: #F8F4EE; --card: #FFFFFF; --ink: #1A1A21; --muted: #6B645C; --line: #E6DED3;
+    --accent: #E16C2C; --accent-ink: #FFFFFF; --ok: #2F7D4F; --warn: #B4511B; --bad: #B3261E;
+    --label-bg: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #17161A; --card: #222026; --ink: #F3EEE7; --muted: #A79F95; --line: #36323A;
+            --accent: #EE7C3D; --ok: #5DBB83; --warn: #E9915C; --bad: #F2867D; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 20px 16px calc(40px + env(safe-area-inset-bottom)); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  h1 { font: 700 22px/1.2 Georgia, "Times New Roman", serif; margin: 0; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 5px 10px;
+    border-radius: 999px; background: var(--card); border: 1px solid var(--line); white-space: nowrap; cursor: pointer; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  button, .btn { font: inherit; border-radius: 10px; border: 1px solid var(--line); background: var(--card);
+    color: var(--ink); padding: 10px 14px; cursor: pointer; min-height: 44px; }
+  button.primary, .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  .drop { display: block; text-align: center; padding: 28px 16px; border: 2px dashed var(--line); border-radius: 14px;
+    cursor: pointer; background: var(--card); }
+  .drop.over { border-color: var(--accent); }
+  .drop strong { display: block; font-size: 18px; margin-bottom: 4px; }
+  .drop span { color: var(--muted); font-size: 14px; }
+  input[type=file] { display: none; }
+  .pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin: 14px 0; }
+  .page { position: relative; border: 2px solid var(--line); border-radius: 10px; padding: 6px; background: var(--label-bg); cursor: pointer; }
+  .page.on { border-color: var(--accent); }
+  .page img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  .page .n { position: absolute; top: 8px; left: 8px; background: var(--ink); color: var(--bg); font-size: 12px;
+    border-radius: 6px; padding: 1px 6px; }
+  .page .tick { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: 14px; display: grid; place-items: center; }
+  .page:not(.on) .tick { background: #0004; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1; }
+  .stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .stepper button { border: 0; border-radius: 0; min-width: 44px; }
+  .stepper input { width: 48px; text-align: center; border: 0; font: inherit; background: transparent; color: var(--ink); }
+  .msg { margin-top: 12px; font-size: 14px; min-height: 1.4em; }
+  .msg.err { color: var(--bad); } .msg.ok { color: var(--ok); }
+  details summary { cursor: pointer; font-weight: 600; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: " ›"; color: var(--muted); }
+  details[open] summary::after { content: " ⌄"; }
+  label.f { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 4px; }
+  input[type=text], input[type=number], select { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink); min-height: 44px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .check { display: flex; gap: 10px; align-items: center; margin-top: 12px; font-size: 15px; }
+  .check input { width: 20px; height: 20px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent;
+    border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Shipping labels</h1>
+    <span class="pill" id="status" title="Tap to refresh"><span class="dot"></span><span>Checking…</span></span>
+  </header>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="application/pdf,.pdf">
+    <strong>Choose a label PDF</strong>
+    <span>From Files, Mail or Downloads. A4 sheets are cropped to the label automatically.</span>
+  </label>
+
+  <section id="job" class="card" hidden>
+    <div class="row">
+      <div class="grow" id="jobname"></div>
+      <button id="toggle" type="button">Select none</button>
+    </div>
+    <div class="pages" id="pages"></div>
+    <div class="row">
+      <span>Copies</span>
+      <span class="stepper">
+        <button type="button" id="minus" aria-label="Fewer copies">−</button>
+        <input id="copies" type="number" min="1" max="99" value="1" inputmode="numeric">
+        <button type="button" id="plus" aria-label="More copies">+</button>
+      </span>
+      <span class="grow"></span>
+      <button class="primary" id="print" type="button">Print</button>
+    </div>
+  </section>
+  <div class="msg" id="msg" role="status"></div>
+
+  <details class="card" id="settings">
+    <summary>Printer settings</summary>
+    <label class="f" for="printer_host">Printer IP address</label>
+    <div class="row">
+      <input class="grow" id="printer_host" type="text" inputmode="decimal" placeholder="192.168.1.50" style="width:auto">
+      <button type="button" id="find">Find</button>
+    </div>
+    <p class="hint" id="findmsg">Give the printer a fixed IP in your router so this never changes.</p>
+
+    <label class="f" for="preset">Label size</label>
+    <select id="preset">
+      <option value="101.6x152.4">4 × 6 in (courier standard)</option>
+      <option value="100x150">100 × 150 mm</option>
+      <option value="101.6x101.6">4 × 4 in</option>
+      <option value="76.2x50.8">3 × 2 in</option>
+      <option value="50.8x25.4">2 × 1 in</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <div class="two" id="custom" hidden>
+      <div><label class="f" for="width_mm">Width (mm)</label><input id="width_mm" type="number" step="0.1"></div>
+      <div><label class="f" for="height_mm">Height (mm)</label><input id="height_mm" type="number" step="0.1"></div>
+    </div>
+
+    <div class="two">
+      <div>
+        <label class="f" for="media">Label stock</label>
+        <select id="media">
+          <option value="gap">Die-cut (gap)</option>
+          <option value="bline">Black mark</option>
+          <option value="continuous">Continuous roll</option>
+        </select>
+      </div>
+      <div><label class="f" for="gap_mm">Gap (mm)</label><input id="gap_mm" type="number" step="0.5" min="0"></div>
+      <div><label class="f" for="density">Darkness (0–15)</label><input id="density" type="number" min="0" max="15"></div>
+      <div><label class="f" for="speed">Speed (in/s)</label><input id="speed" type="number" min="1" max="6"></div>
+    </div>
+    <label class="f" for="threshold">Black threshold (higher = darker, default 160)</label>
+    <input id="threshold" type="number" min="40" max="250">
+    <label class="check"><input type="checkbox" id="trim"> Crop white space around the label</label>
+    <label class="check"><input type="checkbox" id="rotate"> Rotate sideways labels to fit</label>
+    <label class="check"><input type="checkbox" id="direction"> Print top of label first</label>
+
+    <div class="row" style="margin-top:16px">
+      <button class="primary" type="button" id="save">Save</button>
+      <button type="button" id="test">Test print</button>
+      <button type="button" id="calibrate">Calibrate</button>
+      <button type="button" id="feed">Feed</button>
+    </div>
+    <p class="hint">Calibrate makes the printer measure the label gap. Run it after loading a new roll.</p>
+  </details>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const H = { "X-Print-Bridge": "1" };
+let job = null, selected = new Set();
+
+function say(text, kind = "") { const m = $("msg"); m.className = "msg " + kind; m.innerHTML = text; }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { ...H, ...(opts.headers || {}) } });
+  let data = {};
+  try { data = await r.json(); } catch (_) {}
+  if (!r.ok) throw new Error(data.error || `Request failed (${r.status})`);
+  return data;
+}
+
+async function refreshStatus() {
+  const pill = $("status"), dot = pill.querySelector(".dot"), txt = pill.lastElementChild;
+  dot.className = "dot"; txt.textContent = "Checking…";
+  try {
+    const s = await api("/api/status");
+    dot.className = "dot " + (s.ready ? "ok" : s.online ? "warn" : "bad");
+    txt.textContent = s.message;
+  } catch (e) { dot.className = "dot bad"; txt.textContent = "Bridge offline"; }
+}
+
+async function upload(file) {
+  if (!file) return;
+  if (file.size > 25 * 1024 * 1024) return say("That file is over 25 MB.", "err");
+  say('<span class="spinner"></span> Preparing labels…');
+  $("job").hidden = true;
+  try {
+    job = await api("/api/jobs", { method: "POST", body: file, headers: { "Content-Type": "application/pdf" } });
+    job.name = file.name;
+    selected = new Set(Array.from({ length: job.pages }, (_, i) => i + 1));
+    drawJob();
+    say("");
+  } catch (e) { say(esc(e.message), "err"); }
+  $("file").value = "";
+}
+
+function drawJob() {
+  $("job").hidden = false;
+  $("jobname").innerHTML = `<strong>${esc(job.name)}</strong><br><span class="hint">${job.pages} label${job.pages > 1 ? "s" : ""}. Tap a label to skip it.</span>`;
+  $("pages").innerHTML = job.previews.map((src, i) =>
+    `<div class="page ${selected.has(i + 1) ? "on" : ""}" data-n="${i + 1}"><img src="${src}" alt="Label ${i + 1}"><span class="n">${i + 1}</span><span class="tick">✓</span></div>`).join("");
+  $("toggle").textContent = selected.size ? "Select none" : "Select all";
+  $("toggle").hidden = job.pages < 2;
+  $("print").disabled = selected.size === 0;
+  const total = selected.size * (+$("copies").value || 1);
+  $("print").textContent = total ? `Print ${total}` : "Print";
+}
+
+$("pages").addEventListener("click", (e) => {
+  const p = e.target.closest(".page"); if (!p) return;
+  const n = +p.dataset.n; selected.has(n) ? selected.delete(n) : selected.add(n); drawJob();
+});
+$("toggle").onclick = () => {
+  selected = selected.size ? new Set() : new Set(Array.from({ length: job.pages }, (_, i) => i + 1)); drawJob();
+};
+const setCopies = (v) => { $("copies").value = Math.max(1, Math.min(99, v | 0 || 1)); if (job) drawJob(); };
+$("minus").onclick = () => setCopies(+$("copies").value - 1);
+$("plus").onclick = () => setCopies(+$("copies").value + 1);
+$("copies").onchange = () => setCopies(+$("copies").value);
+
+$("print").onclick = async () => {
+  const btn = $("print"); btn.disabled = true;
+  say('<span class="spinner"></span> Sending to printer…');
+  try {
+    const r = await api(`/api/jobs/${job.id}/print`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pages: [...selected].sort((a, b) => a - b), copies: +$("copies").value || 1 }) });
+    say(`Sent ${r.labels} label${r.labels > 1 ? "s" : ""} to the printer.`, "ok");
+    setTimeout(refreshStatus, 1500);
+  } catch (e) { say(esc(e.message), "err"); }
+  btn.disabled = false;
+};
+
+$("file").onchange = (e) => upload(e.target.files[0]);
+const drop = $("drop");
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => upload(e.dataTransfer.files[0]));
+$("status").onclick = refreshStatus;
+
+// ---- settings ----
+const fieldsList = ["printer_host", "width_mm", "height_mm", "media", "gap_mm", "density", "speed", "threshold"];
+function fillSettings(s) {
+  fieldsList.forEach(k => $(k).value = s[k]);
+  ["trim", "rotate"].forEach(k => $(k).checked = !!s[k]);
+  $("direction").checked = !!s.direction;
+  const key = `${+s.width_mm}x${+s.height_mm}`;
+  const opt = [...$("preset").options].find(o => o.value === key);
+  $("preset").value = opt ? key : "custom";
+  $("custom").hidden = !!opt;
+}
+$("preset").onchange = () => {
+  const v = $("preset").value; $("custom").hidden = v !== "custom";
+  if (v !== "custom") { const [w, h] = v.split("x"); $("width_mm").value = w; $("height_mm").value = h; }
+};
+function readSettings() {
+  const s = {}; fieldsList.forEach(k => s[k] = $(k).value);
+  s.trim = $("trim").checked; s.rotate = $("rotate").checked; s.direction = $("direction").checked ? 1 : 0;
+  return s;
+}
+$("save").onclick = async () => {
+  try {
+    fillSettings(await api("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(readSettings()) }));
+    say("Settings saved. Choose the PDF again to apply a new size.", "ok"); refreshStatus();
+  } catch (e) { say(esc(e.message), "err"); }
+};
+for (const [id, path, done] of [["test", "/api/test", "Test label sent."], ["calibrate", "/api/calibrate", "Calibrating: the printer will feed a few labels."], ["feed", "/api/feed", "Fed one label."]]) {
+  $(id).onclick = async () => {
+    try { await api(path, { method: "POST" }); say(done, "ok"); } catch (e) { say(esc(e.message), "err"); }
+  };
+}
+$("find").onclick = async () => {
+  $("findmsg").innerHTML = '<span class="spinner"></span> Looking for printers on the network…';
+  try {
+    const { hosts } = await api("/api/discover");
+    if (!hosts.length) { $("findmsg").textContent = "No printer found. Check it's switched on and plugged into the router."; return; }
+    $("printer_host").value = hosts[0];
+    $("findmsg").textContent = hosts.length === 1 ? `Found ${hosts[0]}. Tap Save.` : `Found ${hosts.join(", ")}. Picked the first; tap Save.`;
+  } catch (e) { $("findmsg").textContent = e.message; }
+};
+
+api("/api/settings").then(s => { fillSettings(s); if (!s.printer_host) $("settings").open = true; }).catch(() => {});
+refreshStatus();
+</script>
+</body>
+</html>
