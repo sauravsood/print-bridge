@@ -45,8 +45,7 @@ TSC printer (called "DHCP reservation" or "static lease") so it never changes af
 
 ### Part B: Raspberry Pi, install
 
-1. Open a terminal on the Pi. Either plug in a keyboard and monitor, or from another computer on
-   the same network run `ssh pi@<Pi's IP address>`. Windows has `ssh` built into PowerShell.
+1. Open a terminal on the Pi (see [Getting into the Pi](#getting-into-the-pi) below).
 2. Paste this one line, replacing `eyJ...` with your token from A4:
 
    ```sh
@@ -54,6 +53,23 @@ TSC printer (called "DHCP reservation" or "static lease") so it never changes af
    ```
 
 3. Wait until it prints **Done. The print bridge is running.**
+
+#### Getting into the Pi
+
+You need a terminal on the Pi, using the username and password chosen when it was first set up
+(often `pi`; very old images used password `raspberry`). Pick whichever route works:
+
+- **Laptop:** open PowerShell (Windows) or Terminal (Mac) and run `ssh pi@raspberrypi.local`.
+  If the host isn't found, use the Pi's IP: `ssh pi@192.168.x.x`.
+- **iPhone:** install a free SSH app such as **Termius**, then add a host with the Pi's IP
+  (or `raspberrypi.local`), the username and the password.
+- **Keyboard and monitor:** plug them into the Pi and log in directly.
+
+**Finding the Pi's IP:** open your router's admin page (usually `192.168.1.1` or `192.168.0.1`)
+and look in the connected or DHCP clients list for `raspberrypi`.
+
+**"Connection refused"** means SSH is switched off. Log in once with a keyboard and monitor, run
+`sudo raspi-config`, go to **Interface Options → SSH → Enable**, and then SSH will work.
 
 ### Part C: Cloudflare, publish and protect
 
