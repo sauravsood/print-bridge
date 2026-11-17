@@ -1,0 +1,25 @@
+[Unit]
+Description=Print bridge (PDF -> TSC label printer)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=printbridge
+Group=printbridge
+WorkingDirectory=/opt/print-bridge
+Environment=PRINT_BRIDGE_DATA=/var/lib/print-bridge
+# Only cloudflared (on this Pi) talks to the app. Change to 0.0.0.0:8080 to also
+# reach it directly on your home network.
+Environment=LISTEN=127.0.0.1:8080
+ExecStart=/usr/bin/python3 -m print_bridge.server
+Restart=always
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/print-bridge
+
+[Install]
+WantedBy=multi-user.target
