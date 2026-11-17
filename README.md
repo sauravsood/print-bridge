@@ -144,12 +144,27 @@ shows **Healthy** with **No routes**. You add the address here.
 
 **C2. Add the email login**
 
-1. Go to **Zero Trust** in the left menu, then **Access** (or **Access controls**) → **Applications** →
-   **Add an application** → **Self-hosted**.
-2. Name it `Print`. Set Subdomain `print` and Domain `sauravsood.com`.
-3. Add a policy named `Me`: Action **Allow**, Include **Emails**, then your email address
-   (add anyone else who prints labels).
-4. Save. Visitors now get a one-time code by email before they see the page.
+This puts a Cloudflare sign-in in front of the page. Without it, anyone who finds the address can print.
+
+1. In the left menu of dash.cloudflare.com, click **Zero Trust** (it may open one.dash.cloudflare.com).
+2. Go to **Access controls** (or **Access**) → **Applications** → **Add an application** → **Self-hosted**.
+3. At the top of the form:
+   - **Application name:** `Print`
+   - **Public hostname** (or **Destinations**): Subdomain `print`, Domain `sauravsood.com`, Path empty
+4. Scroll down. Leave **Browser rendering** as **Disabled**.
+5. Under **Access policies**, click **Create new policy**. In the panel that opens:
+   - **Policy name:** `Me`
+   - **Action:** `Allow`
+   - **Policy session duration:** leave the default (or pick a longer one, such as 1 month, to log in less often)
+   - Under **Include**, open **Selector is…** and choose **Emails**. In the box that appears next to it,
+     type your email address and press **Enter** so it becomes a tag. Add anyone else who prints labels the same way.
+   - Click **Save policy**. (If it opened in a new tab, close that tab and return to the application form.)
+6. Back on the application form, open **Add current policies**, tick **Me**, and confirm. The policy now
+   shows under Access policies.
+7. Leave everything else as it is, and click **Next** / **Save** until the application is created.
+
+Test it: open https://print.sauravsood.com in a private browser window. You should see a Cloudflare
+page asking for your email, then a code arrives by email, and then the label printer page loads.
 
 ### Part D: first print (phone or laptop browser)
 
