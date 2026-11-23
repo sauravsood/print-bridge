@@ -196,7 +196,7 @@ Run the same install command again (without the token) to pull the latest versio
 ## Troubleshooting
 
 - **Bridge offline** on the page: on the Pi, run `sudo systemctl status print-bridge` and `sudo journalctl -u print-bridge -n 50`.
-- **"Can't reach printer"**: check the printer's IP under Printer settings, and that the printer is on the same network as the Pi.
+- **"Can't reach printer"**: the page shows the address it tried and the reason. "No route to host" or "timed out" means nothing is answering there: check the printer is on and cabled to the same router as the Pi, then tap **Find printer**, tap **Save**, and give the printer a fixed IP in the router so it stops moving. "Connection refused" means a different device has that address.
 - **Labels print across the gap or skip a label**: tap **Calibrate**.
 - **The page won't load at all**: run `sudo systemctl status cloudflared` on the Pi, and check that the tunnel shows *Healthy* in the Cloudflare dashboard.
 

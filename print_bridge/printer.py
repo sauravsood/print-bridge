@@ -72,6 +72,20 @@ _STATUS_BITS = [
 ]
 
 
+def _unreachable(host: str, port: int, e: OSError) -> dict:
+    """Plain-English status for a printer the bridge can't connect to."""
+    reason = e.strerror or str(e) or type(e).__name__
+    if isinstance(e, ConnectionRefusedError):
+        hint = ("Something answered at this address, but it isn't the printer. "
+                "Open Printer settings and tap Find.")
+    else:
+        # No route to host / timed out: nothing is answering at that address.
+        hint = ("Check the printer is switched on and its cable is plugged into the main router, "
+                "then open Printer settings and tap Find. Its address may have changed.")
+    return {"online": False, "ready": False, "message": "Can't reach printer",
+            "detail": f"{host}:{port}: {reason}", "hint": hint}
+
+
 def status(host: str, port: int) -> dict:
     try:
         with socket.create_connection((host, port), timeout=CONNECT_TIMEOUT) as sock:
@@ -82,7 +96,7 @@ def status(host: str, port: int) -> dict:
             except socket.timeout:
                 return {"online": True, "ready": None, "message": "Connected (printer did not report status)"}
     except OSError as e:
-        return {"online": False, "ready": False, "message": f"Can't reach printer at {host}:{port} ({e.strerror or e})"}
+        return _unreachable(host, port, e)
     if not b:
         return {"online": True, "ready": None, "message": "Connected (no status reply)"}
     code = b[0]

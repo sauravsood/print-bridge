@@ -48,3 +48,13 @@ class BridgeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StatusMessageTest(unittest.TestCase):
+    def test_unreachable_printer_gets_short_message_and_hint(self):
+        from print_bridge import printer
+        s = printer.status("127.0.0.1", 1)  # nothing listens on port 1
+        self.assertFalse(s["online"])
+        self.assertEqual(s["message"], "Can't reach printer")
+        self.assertIn("127.0.0.1:1", s["detail"])
+        self.assertIn("Find", s["hint"])
