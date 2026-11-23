@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import concurrent.futures
 import ipaddress
+import re
 import socket
+import subprocess
 import struct
 import zlib
 from dataclasses import dataclass
@@ -108,13 +110,32 @@ def status(host: str, port: int) -> dict:
 
 
 def _local_networks() -> list[ipaddress.IPv4Network]:
-    nets = []
+    """The /24 around every IPv4 address the Pi has (cable and Wi-Fi alike).
+
+    The printer may sit on a different interface from the one the Pi uses for
+    the internet, for example eth0 into a second router while wlan0 is on Wi-Fi.
+    """
+    nets: list[ipaddress.IPv4Network] = []
+
+    def add(ip: str) -> None:
+        addr = ipaddress.ip_address(ip)
+        if addr.is_loopback or addr.is_link_local:
+            return
+        net = ipaddress.ip_network(f"{ip}/24", strict=False)
+        if net not in nets:
+            nets.append(net)
+
+    try:
+        out = subprocess.run(["ip", "-4", "-o", "addr", "show"], capture_output=True, text=True, timeout=3).stdout
+        for m in re.finditer(r"\binet (\d+\.\d+\.\d+\.\d+)/\d+", out):
+            add(m.group(1))
+    except (OSError, subprocess.SubprocessError, ValueError):
+        pass
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("10.255.255.255", 1))  # no packet is sent; picks the LAN interface
-            ip = s.getsockname()[0]
-        nets.append(ipaddress.ip_network(f"{ip}/24", strict=False))
-    except OSError:
+            s.connect(("10.255.255.255", 1))  # no packet is sent; picks the default interface
+            add(s.getsockname()[0])
+    except (OSError, ValueError):
         pass
     return nets
 
