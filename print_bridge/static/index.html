@@ -24,10 +24,17 @@
   html, body { margin: 0; background: var(--bg); color: var(--ink);
     font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   main { max-width: 640px; margin: 0 auto; padding: 20px 16px calc(40px + env(safe-area-inset-bottom)); }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
-  h1 { font: 700 22px/1.2 Georgia, "Times New Roman", serif; margin: 0; }
-  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 5px 10px;
+  html, body { overflow-x: hidden; }
+  header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 18px; }
+  h1 { font: 700 22px/1.2 Georgia, "Times New Roman", serif; margin: 0; min-width: 0; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 5px 10px; max-width: 100%; min-width: 0;
     border-radius: 999px; background: var(--card); border: 1px solid var(--line); white-space: nowrap; cursor: pointer; }
+  .pill > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+  .dot { flex: none; }
+  .notice { border-color: var(--bad); }
+  .notice strong { display: block; margin-bottom: 4px; }
+  .notice p { margin: 0 0 10px; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+  .notice code { font: 13px ui-monospace, Menlo, monospace; color: var(--ink); }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
   .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
@@ -79,6 +86,13 @@
     <h1>Shipping labels</h1>
     <span class="pill" id="status" title="Tap to refresh"><span class="dot"></span><span>Checking…</span></span>
   </header>
+
+  <section class="card notice" id="notice" hidden>
+    <strong>The printer isn&rsquo;t answering</strong>
+    <p id="noticehint"></p>
+    <p><code id="noticedetail"></code></p>
+    <button type="button" id="noticefind">Find printer</button>
+  </section>
 
   <label class="drop" id="drop">
     <input type="file" id="file" accept="application/pdf,.pdf">
@@ -180,7 +194,13 @@ async function refreshStatus() {
     const s = await api("/api/status");
     dot.className = "dot " + (s.ready ? "ok" : s.online ? "warn" : "bad");
     txt.textContent = s.message;
-  } catch (e) { dot.className = "dot bad"; txt.textContent = "Bridge offline"; }
+    pill.title = (s.detail ? s.detail + ". " : "") + "Tap to refresh";
+    $("notice").hidden = s.online !== false;
+    if (s.online === false) {
+      $("noticehint").textContent = s.hint || "Check the printer is on, then open Printer settings and tap Find.";
+      $("noticedetail").textContent = s.detail || "";
+    }
+  } catch (e) { dot.className = "dot bad"; txt.textContent = "Bridge offline"; $("notice").hidden = true; }
 }
 
 async function upload(file) {
@@ -240,6 +260,11 @@ const drop = $("drop");
 ["dragleave", "drop"].forEach(t => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
 drop.addEventListener("drop", (e) => upload(e.dataTransfer.files[0]));
 $("status").onclick = refreshStatus;
+$("noticefind").onclick = () => {
+  $("settings").open = true;
+  $("settings").scrollIntoView({ behavior: "smooth", block: "start" });
+  $("find").click();
+};
 
 // ---- settings ----
 const fieldsList = ["printer_host", "width_mm", "height_mm", "media", "gap_mm", "density", "speed", "threshold"];
